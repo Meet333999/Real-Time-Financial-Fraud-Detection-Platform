@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fraud-frontend-deployment
+  namespace: fraud-detection
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: fraud-frontend
+  template:
+    metadata:
+      labels:
+        app: fraud-frontend
+    spec:
+      containers:
+        - name: frontend
+          image: fraud-frontend:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "50m"
+            limits:
+              memory: "256Mi"
+              cpu: "250m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-service
+  namespace: fraud-detection
+spec:
+  type: ClusterIP
+  selector:
+    app: fraud-frontend
+  ports:
+    - port: 80
+      targetPort: 80

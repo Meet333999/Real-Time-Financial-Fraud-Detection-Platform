@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fraud-platform-config
+  namespace: fraud-detection
+data:
+  ENVIRONMENT: "production"
+  LOG_LEVEL: "INFO"
+  KAFKA_BOOTSTRAP_SERVERS: "kafka-service:9092"
+  KAFKA_TOPIC_INCOMING: "transactions-incoming"
+  KAFKA_TOPIC_SCORED: "transactions-scored"
+  KAFKA_TOPIC_ALERTS: "fraud-alerts"
+  KAFKA_CONSUMER_GROUP: "fraud-detection-engine"
+  MLFLOW_TRACKING_URI: "http://mlflow-service:5000"
+  HYBRID_ALPHA: "0.65"
+  HYBRID_BETA: "0.35"
+  FRAUD_THRESHOLD_LOW: "0.20"
+  FRAUD_THRESHOLD_HIGH: "0.45"
+  RETRAINING_DRIFT_THRESHOLD: "0.25"

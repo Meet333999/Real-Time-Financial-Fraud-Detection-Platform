@@ -1,0 +1,183 @@
+version: '3.8'
+
+services:
+  # -------------------------------------------------------------
+  # 1. DATABASE: PostgreSQL for Relational Audit & MLflow
+  # -------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: fraud-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: fraud_user
+      POSTGRES_PASSWORD: fraud_secure_password
+      POSTGRES_DB: fraud_detection
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fraud_user -d fraud_detection"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # -------------------------------------------------------------
+  # 2. CACHE & ONLINE FEATURE STORE: Redis
+  # -------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: fraud-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # -------------------------------------------------------------
+  # 3. STREAMING: Apache Kafka & Zookeeper
+  # -------------------------------------------------------------
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: fraud-zookeeper
+    restart: unless-stopped
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: fraud-kafka
+    restart: unless-stopped
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics --bootstrap-server localhost:9092 --list"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+
+  # -------------------------------------------------------------
+  # 4. EXPERIMENT TRACKING: MLflow Server
+  # -------------------------------------------------------------
+  mlflow:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/Dockerfile.backend
+    container_name: fraud-mlflow
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "5000:5000"
+    environment:
+      - BACKEND_STORE_URI=postgresql://fraud_user:fraud_secure_password@postgres:5432/fraud_detection
+      - ARTIFACT_ROOT=/app/artifacts
+    command: >
+      mlflow server
+      --backend-store-uri postgresql://fraud_user:fraud_secure_password@postgres:5432/fraud_detection
+      --default-artifact-root /app/artifacts
+      --host 0.0.0.0
+      --port 5000
+    volumes:
+      - mlflow_data:/app/artifacts
+
+  # -------------------------------------------------------------
+  # 5. BACKEND: FastAPI Fraud Scoring Service
+  # -------------------------------------------------------------
+  backend:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/Dockerfile.backend
+    container_name: fraud-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=production
+      - DATABASE_URL=postgresql://fraud_user:fraud_secure_password@postgres:5432/fraud_detection
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - REDIS_URL=redis://redis:6379/0
+      - HYBRID_ALPHA=0.65
+      - HYBRID_BETA=0.35
+      - FRAUD_THRESHOLD_LOW=0.20
+      - FRAUD_THRESHOLD_HIGH=0.45
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # -------------------------------------------------------------
+  # 6. STREAMING WORKER: Real-time Kafka Consumer
+  # -------------------------------------------------------------
+  kafka-consumer:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/Dockerfile.streaming
+    container_name: fraud-consumer
+    restart: unless-stopped
+    depends_on:
+      kafka:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - DATABASE_URL=postgresql://fraud_user:fraud_secure_password@postgres:5432/fraud_detection
+    command: >
+      python -c "
+      import time
+      from backend.streaming.consumer import TransactionStreamConsumer
+      c = TransactionStreamConsumer(bootstrap_servers='kafka:29092')
+      c.initialize()
+      c.start_background_consumer()
+      print('Kafka consumer operational.')
+      while True: time.sleep(3600)
+      "
+
+  # -------------------------------------------------------------
+  # 7. FRONTEND: React Analyst Dashboard
+  # -------------------------------------------------------------
+  frontend:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/Dockerfile.frontend
+    container_name: fraud-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "3000:80"
+
+volumes:
+  postgres_data:
+  redis_data:
+  mlflow_data:

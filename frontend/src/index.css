@@ -1,0 +1,83 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  color-scheme: dark;
+  --obsidian-base: #0B0E11;
+  --obsidian-surface: #13171C;
+  --obsidian-well: #0E1216;
+  --obsidian-border: #20262E;
+  --neon-green: #00E599;
+  --neon-amber: #FF9900;
+  --neon-violet: #8B5CF6;
+  --text-primary: #FFFFFF;
+  --text-secondary: #8E9AA8;
+}
+
+body {
+  background-color: #0B0E11;
+  color: #FFFFFF;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+code, pre, .font-mono {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Custom Sleek Dark Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0B0E11;
+}
+::-webkit-scrollbar-thumb {
+  background: #20262E;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #313B47;
+}
+
+/* Sleek Obsidian Financial UI Components */
+@layer components {
+  .console-panel {
+    background-color: #13171C;
+    border: 1px solid #20262E;
+    border-radius: 18px;
+    box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.5), 0 0 0 1px #20262E;
+  }
+
+  .console-well {
+    background-color: #0E1216;
+    border: 1px solid #1C232B;
+    border-radius: 14px;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.45);
+  }
+
+  .console-kicker {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .tactile-btn {
+    border-radius: 10px;
+    transition: all 0.15s ease;
+  }
+  .tactile-btn:active {
+    transform: scale(0.97);
+  }
+
+  /* Neon rim glow like the user image */
+  .neon-glow-border {
+    border: 1px solid rgba(0, 229, 153, 0.35);
+    box-shadow: 0 0 20px rgba(0, 229, 153, 0.15);
+  }
+}

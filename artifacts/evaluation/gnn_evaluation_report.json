@@ -1,0 +1,24 @@
+{
+  "model_type": "PyTorch Geometric GraphSAGE",
+  "model_version": "1.0.0",
+  "in_channels": 7,
+  "hidden_dim": 64,
+  "graph_metadata": {
+    "num_nodes": 82821,
+    "num_edges": 525000,
+    "fraud_nodes": 549,
+    "accounts_count": 35893,
+    "devices_count": 22050,
+    "cards_count": 24878
+  },
+  "metrics": {
+    "pr_auc": 0.0259,
+    "roc_auc": 0.7901,
+    "precision": 0.0117,
+    "recall": 0.8152,
+    "f1_score": 0.023,
+    "loss": 1.0665,
+    "epoch": 35
+  },
+  "detected_rings_count": 24981
+}

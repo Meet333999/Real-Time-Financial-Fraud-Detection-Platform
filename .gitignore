@@ -1,0 +1,91 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+.venv
+venv/
+
+# Environment Variables
+.env
+.env.local
+
+# MLflow
+mlruns/
+mlartifacts/
+.mlflow/
+
+# Feast
+backend/feature_store/feast_repo/data/
+*.db
+*.db-journal
+
+# Data & Artifacts (track directory structure via .gitkeep)
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+data/features/*
+!data/features/.gitkeep
+data/graph/*
+!data/graph/.gitkeep
+data/reports/*
+!data/reports/.gitkeep
+artifacts/xgboost/*
+!artifacts/xgboost/.gitkeep
+!artifacts/xgboost/*.json
+artifacts/graph/*
+!artifacts/graph/.gitkeep
+!artifacts/graph/*.json
+!artifacts/graph/*.pt
+artifacts/evaluation/*
+!artifacts/evaluation/.gitkeep
+!artifacts/evaluation/*.json
+
+# Hugging Face deployment repo
+hf_space_repo/
+.pytest_cache/
+
+# Evidently reports
+*.html
+
+# Node / React
+node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+.npm
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

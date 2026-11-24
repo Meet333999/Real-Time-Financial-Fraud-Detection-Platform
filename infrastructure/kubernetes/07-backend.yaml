@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fraud-backend-deployment
+  namespace: fraud-detection
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: fraud-backend
+  template:
+    metadata:
+      labels:
+        app: fraud-backend
+    spec:
+      containers:
+        - name: backend
+          image: fraud-backend:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+          envFrom:
+            - configMapRef:
+                name: fraud-platform-config
+            - secretRef:
+                name: fraud-platform-secrets
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 15
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "500m"
+            limits:
+              memory: "2Gi"
+              cpu: "2000m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-service
+  namespace: fraud-detection
+spec:
+  type: ClusterIP
+  selector:
+    app: fraud-backend
+  ports:
+    - port: 8000
+      targetPort: 8000
